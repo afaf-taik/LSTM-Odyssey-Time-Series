@@ -67,25 +67,28 @@ hourly_groups = dataframe.resample('H')
 hourly_data = hourly_groups.sum()
 dataset = hourly_data.values
 dataset = hourly_data.astype('float32')
+train_size = int(len(dataset) * 0.8)
+test_size = len(dataset) - train_size
+traind, testd = dataset.iloc[0:train_size,:], dataset.iloc[train_size:len(dataset),:]
 
 # normalize the dataset
 scaler = MinMaxScaler(feature_range=(0, 1))
-dataset = scaler.fit_transform(dataset)
+traind = scaler.fit_transform(traind)
+testd = scaler.transform(testd)
 
 #Turn the data into the supervised learning shape  
 
-supervised = series_to_supervised(dataset, n_lag, n_seq)
-supervised_values = supervised.values
+train,test = series_to_supervised(traind, n_lag, n_seq), series_to_supervised(testd, n_lag, n_seq)
+train_values = train.values
+test_values = test.values
 
 # split into train and test sets
-train_size = int(len(dataset) * 0.8)
-test_size = len(dataset) - train_size
-train, test = supervised_values[0:train_size,:], supervised_values[train_size:len(dataset),:]
-trainX,trainY= train[:, 0:n_lag], train[:, n_lag:]
-testX,testY= test[:, 0:n_lag], test[:, n_lag:]
+trainX,trainY= train_values[:, 0:n_lag], train_values[:, n_lag:]
+testX,testY= test_values[:, 0:n_lag], test_values[:, n_lag:]
 # reshape input to be [samples, time steps, features]
 trainX = numpy.reshape(trainX, (trainX.shape[0], trainX.shape[1],1))
 testX = numpy.reshape(testX, (testX.shape[0],testX.shape[1],1))
+
 
 ###########################################################################################
 #Create the models, and fit them
